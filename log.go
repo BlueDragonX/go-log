@@ -90,7 +90,7 @@ var Console Option = func(logger *Logger) error {
 
 type Logger struct {
 	writer Writer
-	level int
+	level  int
 }
 
 // Return a new logger.

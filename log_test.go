@@ -4,9 +4,8 @@ import (
 	"testing"
 )
 
-
 type MockWriter struct {
-	Level int
+	Level   int
 	Message string
 }
 
@@ -39,7 +38,6 @@ func (w *MockWriter) Written(level int, message string) bool {
 	w.Clear()
 	return written
 }
-
 
 func TestPrint(t *testing.T) {
 	writer := NewMockWriter()

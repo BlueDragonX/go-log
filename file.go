@@ -8,7 +8,7 @@ import (
 )
 
 type FileWriter struct {
-	prog string
+	prog   string
 	writer io.Writer
 }
 
