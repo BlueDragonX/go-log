@@ -7,8 +7,10 @@ import (
 	"strings"
 )
 
+type Level int
+
 const (
-	LEVEL_DEBUG = iota
+	LEVEL_DEBUG Level = iota
 	LEVEL_INFO
 	LEVEL_ERROR
 )
@@ -21,82 +23,102 @@ const (
 
 type Option func(logger *Logger) error
 
-// Writers are where the logger sends filtered log messages and are created by a target.
-type Writer interface {
-	Write(level int, message string)
+// Convert a string to a level value.
+func NewLevel(level string) Level {
+	switch strings.ToLower(strings.TrimSpace(level)) {
+	case "debug":
+		return LEVEL_DEBUG
+	case "error":
+		return LEVEL_ERROR
+	default:
+		return LEVEL_INFO
+	}
+}
+
+// Targets are where the logger sends filtered log messages. They can be created by a TargetOpt.
+type Target interface {
+	Write(level Level, message string)
 	Close() error
 }
 
-// Create a level option to configure the logger.
-func Level(level string) Option {
-	level = strings.ToLower(level)
-	levelInt := LEVEL_INFO
-	switch level {
-	case "debug":
-		levelInt = LEVEL_DEBUG
-	case "error":
-		levelInt = LEVEL_ERROR
+func NewTarget(uri string) (Target, error) {
+	var target Target
+	var err error
+	if uri == TARGET_STDERR {
+		target = NewFileTarget(os.Stderr)
+	} else if uri == TARGET_STDOUT {
+		target = NewFileTarget(os.Stdout)
+	} else if uri == TARGET_SYSLOG {
+		target, err = NewSyslogTarget()
+	} else {
+		var network, raddr string
+		if network, raddr, err = uriaddr(uri); err == nil {
+			if network == "file" {
+				target, err = OpenFileTarget(raddr)
+			} else {
+				target, err = NewRemoteTarget(network, raddr)
+			}
+		}
 	}
+	return target, err
+}
 
+// Create a level option to configure the logger.
+func LevelOpt(level Level) Option {
 	return func(logger *Logger) error {
-		logger.level = levelInt
+		logger.SetLevel(level)
+		return nil
+	}
+}
+
+// Create a level option to configure the logger.
+func NewLevelOpt(level string) Option {
+	return LevelOpt(NewLevel(level))
+}
+
+// Create a target option to configure the logger.
+func TargetOpt(target Target) Option {
+	return func(logger *Logger) error {
+		logger.SetTarget(target)
 		return nil
 	}
 }
 
 // Create a target option to configure the logger.
-func Target(uri string) Option {
-	var writer Writer
-	var err error
-	if uri == TARGET_STDERR {
-		writer = NewFileWriter(os.Stderr)
-	} else if uri == TARGET_STDOUT {
-		writer = NewFileWriter(os.Stdout)
-	} else if uri == TARGET_SYSLOG {
-		writer, err = NewSyslogWriter()
-	} else {
-		var network, raddr string
-		if network, raddr, err = uriaddr(uri); err == nil {
-			if network == "file" {
-				writer, err = OpenFileWriter(raddr)
-			} else {
-				writer, err = NewRemoteWriter(network, raddr)
-			}
-		}
-	}
-
+func NewTargetOpt(uri string) Option {
 	return func(logger *Logger) error {
+		target, err := NewTarget(uri)
 		if err == nil {
-			logger.writer = writer
+			logger.SetTarget(target)
 		}
 		return err
 	}
 }
 
 // Create a syslog option to configure the logger.
-var Syslog Option = func(logger *Logger) error {
-	writer, err := NewSyslogWriter()
+var SyslogOpt Option = func(logger *Logger) error {
+	target, err := NewSyslogTarget()
 	if err == nil {
-		logger.writer = writer
+		logger.target = target
 	}
 	return err
 }
 
 // Create a console target option to configure the logger.
-var Console Option = func(logger *Logger) error {
-	logger.writer = NewFileWriter(os.Stderr)
+var ConsoleOpt Option = func(logger *Logger) error {
+	logger.target = NewFileTarget(os.Stderr)
 	return nil
 }
 
 type Logger struct {
-	writer Writer
-	level  int
+	target Target
+	level  Level
 }
 
 // Return a new logger.
 func New(options ...Option) (*Logger, error) {
 	logger := &Logger{
-		writer: NewFileWriter(os.Stderr),
+		target: NewFileTarget(os.Stderr),
 		level:  LEVEL_INFO,
 	}
 
@@ -119,30 +141,30 @@ func NewOrExit(options ...Option) *Logger {
 	return logger
 }
 
-// Set the writer used by the logger.
-func (l *Logger) SetWriter(writer Writer) {
-	l.writer = writer
+// Set the target used by the logger.
+func (l *Logger) SetTarget(target Target) {
+	l.target = target
 }
 
 // Set the level of the logger.
-func (l *Logger) SetLevel(level int) {
+func (l *Logger) SetLevel(level Level) {
 	l.level = level
 }
 
 // Close the logger.
 func (l *Logger) Close() error {
-	return l.writer.Close()
+	return l.target.Close()
 }
 
 // Log a message at the provided level.
-func (l *Logger) Print(level int, message string) {
+func (l *Logger) Print(level Level, message string) {
 	if level >= l.level {
-		l.writer.Write(level, message)
+		l.target.Write(level, message)
 	}
 }
 
 // Log a formatted message at the provided level.
-func (l *Logger) Printf(level int, format string, a ...interface{}) {
+func (l *Logger) Printf(level Level, format string, a ...interface{}) {
 	l.Print(level, fmt.Sprintf(format, a...))
 }
 
