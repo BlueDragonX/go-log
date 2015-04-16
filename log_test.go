@@ -44,18 +44,18 @@ func TestPrint(t *testing.T) {
 	logger, _ := New()
 	logger.SetTarget(target)
 
-	logger.Print(LEVEL_DEBUG, "test")
+	logger.Print(LevelDebug, "test")
 	if !target.NoWrite() {
 		t.Error("debug message written")
 	}
 
-	logger.Print(LEVEL_INFO, "test")
-	if !target.Written(LEVEL_INFO, "test") {
+	logger.Print(LevelInfo, "test")
+	if !target.Written(LevelInfo, "test") {
 		t.Error("info message not written")
 	}
 
-	logger.Print(LEVEL_ERROR, "test")
-	if !target.Written(LEVEL_ERROR, "test") {
+	logger.Print(LevelError, "test")
+	if !target.Written(LevelError, "test") {
 		t.Error("error message not written")
 	}
 }
@@ -65,14 +65,14 @@ func TestLevel(t *testing.T) {
 	logger, _ := New()
 	logger.SetTarget(target)
 
-	logger.SetLevel(LEVEL_DEBUG)
-	logger.Print(LEVEL_DEBUG, "test")
-	if !target.Written(LEVEL_DEBUG, "test") {
+	logger.SetLevel(LevelDebug)
+	logger.Print(LevelDebug, "test")
+	if !target.Written(LevelDebug, "test") {
 		t.Error("debug message not written")
 	}
 
-	logger.SetLevel(LEVEL_ERROR)
-	logger.Print(LEVEL_DEBUG, "test")
+	logger.SetLevel(LevelError)
+	logger.Print(LevelDebug, "test")
 	if !target.NoWrite() {
 		t.Error("debug message written")
 	}

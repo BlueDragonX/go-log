@@ -29,9 +29,9 @@ func NewRemoteTarget(network, raddr string) (*SyslogTarget, error) {
 
 // Print a log message to the writer.
 func (s *SyslogTarget) Write(level Level, message string) {
-	if level == LEVEL_DEBUG {
+	if level == LevelDebug {
 		s.writer.Debug(message)
-	} else if level == LEVEL_ERROR {
+	} else if level == LevelError {
 		s.writer.Err(message)
 	} else {
 		s.writer.Info(message)

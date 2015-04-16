@@ -10,15 +10,15 @@ import (
 type Level int
 
 const (
-	LEVEL_DEBUG Level = iota
-	LEVEL_INFO
-	LEVEL_ERROR
+	LevelDebug Level = iota
+	LevelInfo
+	LevelError
 )
 
 const (
-	TARGET_STDERR = "stderr"
-	TARGET_STDOUT = "stdout"
-	TARGET_SYSLOG = "syslog"
+	TargetStderr = "stderr"
+	TargetStdout = "stdout"
+	TargetSyslog = "syslog"
 )
 
 type Option func(logger *Logger) error
@@ -27,11 +27,11 @@ type Option func(logger *Logger) error
 func NewLevel(level string) Level {
 	switch strings.ToLower(strings.TrimSpace(level)) {
 	case "debug":
-		return LEVEL_DEBUG
+		return LevelDebug
 	case "error":
-		return LEVEL_ERROR
+		return LevelError
 	default:
-		return LEVEL_INFO
+		return LevelInfo
 	}
 }
 
@@ -44,11 +44,11 @@ type Target interface {
 func NewTarget(uri string) (Target, error) {
 	var target Target
 	var err error
-	if uri == TARGET_STDERR {
+	if uri == TargetStderr {
 		target = NewFileTarget(os.Stderr)
-	} else if uri == TARGET_STDOUT {
+	} else if uri == TargetStdout {
 		target = NewFileTarget(os.Stdout)
-	} else if uri == TARGET_SYSLOG {
+	} else if uri == TargetSyslog {
 		target, err = NewSyslogTarget()
 	} else {
 		var network, raddr string
@@ -119,7 +119,7 @@ type Logger struct {
 func New(options ...Option) (*Logger, error) {
 	logger := &Logger{
 		target: NewFileTarget(os.Stderr),
-		level:  LEVEL_INFO,
+		level:  LevelInfo,
 	}
 
 	var err error
@@ -170,7 +170,7 @@ func (l *Logger) Printf(level Level, format string, a ...interface{}) {
 
 // Log a message at the `error` level and call panic().
 func (l *Logger) Panic(message string) {
-	l.Print(LEVEL_ERROR, message)
+	l.Print(LevelError, message)
 	panic(errors.New(message))
 }
 
@@ -181,7 +181,7 @@ func (l *Logger) Panicf(format string, a ...interface{}) {
 
 // Log a message at the `error` level and call os.Exit(1).
 func (l *Logger) Fatal(message string) {
-	l.Print(LEVEL_ERROR, message)
+	l.Print(LevelError, message)
 	os.Exit(1)
 }
 
@@ -192,30 +192,30 @@ func (l *Logger) Fatalf(format string, a ...interface{}) {
 
 // Log a message at the `debug` level.
 func (l *Logger) Debug(message string) {
-	l.Print(LEVEL_DEBUG, message)
+	l.Print(LevelDebug, message)
 }
 
 // Log a formatted message at the `debug` level.
 func (l *Logger) Debugf(format string, a ...interface{}) {
-	l.Printf(LEVEL_DEBUG, format, a...)
+	l.Printf(LevelDebug, format, a...)
 }
 
 // Log a message at the `info` level.
 func (l *Logger) Info(message string) {
-	l.Print(LEVEL_INFO, message)
+	l.Print(LevelInfo, message)
 }
 
 // Log a formatted message at the `info` level.
 func (l *Logger) Infof(format string, a ...interface{}) {
-	l.Printf(LEVEL_INFO, format, a...)
+	l.Printf(LevelInfo, format, a...)
 }
 
 // Log a message at the `error` level.
 func (l *Logger) Error(message string) {
-	l.Print(LEVEL_ERROR, message)
+	l.Print(LevelError, message)
 }
 
 // Log a formatted message at the `error` level.
 func (l *Logger) Errorf(format string, a ...interface{}) {
-	l.Printf(LEVEL_ERROR, format, a...)
+	l.Printf(LevelError, format, a...)
 }
