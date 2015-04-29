@@ -35,6 +35,12 @@ You can combine the two:
 
 The `log.SyslogOpt` value is a target which points to the local syslog server.
 
+The library's `Writer` implements `io.Writer` and can be used to write logs at
+a specific level:
+
+	wrt := log.NewWriter(log.LevelDebug, logger)
+	wrt.Write(data)
+
 Targets
 -------
 The `NewTargetOpt` function takes the URI (as a string) of a file or network
